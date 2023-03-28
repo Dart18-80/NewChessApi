@@ -6,6 +6,7 @@ using chessAPI.models.player;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
 using Serilog.Events;
+using chessAPI.models.game;
 
 //Serilog logger (https://github.com/serilog/serilog-aspnetcore)
 Log.Logger = new LoggerConfiguration()
@@ -21,8 +22,10 @@ try
 
     var connectionStrings = new connectionStrings();
     builder.Services.AddOptions();
+    builder.Services.AddControllers();
     builder.Services.Configure<connectionStrings>(builder.Configuration.GetSection("ConnectionStrings"));
     builder.Configuration.GetSection("ConnectionStrings").Bind(connectionStrings);
+    builder.Services.AddControllers().AddNewtonsoftJson();
 
     // Two-stage initialization (https://github.com/serilog/serilog-aspnetcore)
     builder.Host.UseSerilog((context, services, configuration) => configuration.ReadFrom
@@ -38,13 +41,27 @@ try
     var app = builder.Build();
     app.UseSerilogRequestLogging();
     app.UseMiddleware(typeof(chessAPI.customMiddleware<int>));
+    app.MapControllers();
     app.MapGet("/", () =>
     {
         return "hola mundo";
     });
 
-    app.MapPost("player", 
+    app.MapPost("/playerr", () => {
+        return "Aca entro a buscar un jugador";
+    });
+
+    app.MapPost("/player", 
     [AllowAnonymous] async(IPlayerBusiness<int> bs, clsNewPlayer newPlayer) => Results.Ok(await bs.addPlayer(newPlayer)));
+
+    #region "Game REST Commands"
+    app.MapPost("/game",
+    [AllowAnonymous] async (IGameBusiness bs, clsNewGame newGame) =>
+    {
+        await bs.startGame(newGame).ConfigureAwait(false);
+        return Results.Ok();
+    });
+    #endregion
 
     app.Run();
 }

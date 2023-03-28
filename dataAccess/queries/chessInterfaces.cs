@@ -4,4 +4,3 @@ namespace chessAPI.dataAccess.queries;
 
 public interface IQGame : ISQLData {}
 public interface IQPlayer : ISQLData {}
-
